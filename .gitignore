@@ -1,0 +1,6 @@
+bazel-MatchingEngine
+bazel-bin
+baze-out
+bazel-testlogs
+MODULE.bazel.lock
+a.out
