@@ -1,25 +1,29 @@
 #include "messages.h"
 
-#include <format>
 #include <string>
+#include <iostream>
 
-namespace mukhi::matching_engine
-{
+namespace mukhi::matching_engine {
 
-    std::string TradeEvent::to_string()
-    {
-        return std::format("{},{},{}",
-                           static_cast<uint8_t>(MessageType::kTradeEvent), qty, price);
-    }
+namespace {
+uint32_t to_num(const MessageType& t) {
+    return static_cast<uint32_t>(t);
+}
+}  // namespace
 
-    std::string OrderFullyFilled::to_string()
-    {
-        return std::format("{},{}", static_cast<uint8_t>(MessageType::kOrderFullyFilled), order_id);
-    }
+std::ostream& operator<<(std::ostream& os, const TradeEvent& obj) {
+    os << to_num(MessageType::kTradeEvent) << "," << obj.qty << "," << obj.price;
+    return os;
+}
 
-    std::string OrderPartiallyFilled::to_string()
-    {
-        return std::format("{},{},{}", static_cast<uint8_t>(MessageType::kOrderPartiallyFilled), order_id, remaining);
-    }
+std::ostream& operator<<(std::ostream& os, const OrderFullyFilled& obj) {
+    os << to_num(MessageType::kOrderFullyFilled) << "," << obj.order_id;
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const OrderPartiallyFilled& obj) {
+    os << to_num(MessageType::kOrderPartiallyFilled) << "," << obj.order_id << "," << obj.remaining;
+    return os;
+}
 
 } // mmukhi::matching_engine
