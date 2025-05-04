@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace mukhi::matching_engine {
 
@@ -12,11 +13,13 @@ enum class MessageType : uint8_t {
     kTradeEvent = 2,
     kOrderFullyFilled = 3,
     kOrderPartiallyFilled = 4,
+    kUndefined = 10,
 };
 
 enum class Side : uint8_t {
     kBuy = 0,
     kSell = 1,
+    kUndefined = 10,
 };
 
 using OrderId = uint64_t;
@@ -35,6 +38,17 @@ struct AddOrderRequest {
 struct CancelOrderRequest {
     OrderId order_id;
 };
+
+using InputMessage = std::variant<AddOrderRequest, CancelOrderRequest>;
+
+// Parses one input message, return value is `std::nullopt` if message is ill-formed.
+// Format is either of the following:
+//
+// * msgtype,orderid,side,quantity,price (e.g., 0,123,0,9,1000)
+// * msgtype,orderid (e.g., 1,123)
+//
+// Note that no whitespace is allowed between token and delimter(comma).
+std::optional<InputMessage> parse(std::string_view input);
 
 // Output messages.
 
