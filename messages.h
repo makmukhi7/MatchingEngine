@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <optional>
+#include <variant>
 
 namespace mukhi::matching_engine {
 
