@@ -3,6 +3,7 @@
 
 #include "messages.h"
 
+#include <functional>
 #include <list>
 #include <map>
 #include <unordered_map>
@@ -18,8 +19,12 @@ struct Order {
 using OrderList = std::list<Order>;
 using SellOrderMap = std::map<Price, OrderList>;
 using BuyOrderMap = std::map<Price, OrderList, std::greater<Price>>;
-/* Note that we don't use a std::variant here since the types `std::map<Price, OrderList>::iterator` and `std::map<Price, OrderList, std::greater<Price>>::iterator` can't be disambigauted. We could technically use the same type `std::map<Price, OrderList>::iterator` to capture instances of both but that seems like a risky optimization, so to be on the safer side we use a struct here.
-*/
+// Note that we don't use a std::variant here since the types
+// `std::map<Price, OrderList>::iterator` and `std::map<Price, OrderList,
+// std::greater<Price>>::iterator` can't be disambigauted. 
+// We could technically use the same type `std::map<Price,OrderList>::iterator`
+// to capture instances of both but that seems like a risky optimization, so to
+//  be on the safer side we use a struct here.
 struct IteratorVariant {
     SellOrderMap::iterator sell_order_map_it;
     BuyOrderMap::iterator buy_order_map_it;
@@ -60,13 +65,12 @@ private:
     // Tracks all orders by id.
     std::unordered_map<OrderId, OrderEntry> order_id_index_;
 
-    /*
-    Following map is for optimizing insertion of orders at any price.
-    If there exists an order at the same price, insertion can happen in
-    constant time instead of the default log(n) of b-tree.
-
-    Note that we can keep the same map for both buy and sell since at a given price only one type of the order can be in the book (otherwise they will result in a trade).
-    */
+    // Following map is for optimizing insertion of orders at any price.
+    // If there exists an order at the same price, insertion can happen in
+    // constant time instead of the default log(n) of b-tree.
+    // Note that we can keep the same map for both buy and sell since at a
+    // given price only one type of the order can be in the book (otherwise
+    //they will result in a trade).
     PriceIndex price_index_;
 };
 
