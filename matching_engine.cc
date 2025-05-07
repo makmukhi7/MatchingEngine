@@ -2,7 +2,7 @@
 
 namespace mukhi::matching_engine {
 
-void MatchingEngine::StartBlocking() {
+void MatchingEngine::Start() {
     std::string line;
     while (true) {
         std::getline(is_, line);

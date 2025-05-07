@@ -38,13 +38,6 @@ public:
 
     void ProcessOrder(const AddOrderRequest& req);
     void ProcessOrder(const CancelOrderRequest& req);
-
-    // Following are test only methods that production code shouldn't use.
-    const SellOrderMap& TEST_sell_order_map() const { return sell_orders_; }
-    const BuyOrderMap& TEST_buy_order_map() const { return buy_orders_; }
-    const std::unordered_map<OrderId, OrderEntry>& TEST_order_id_index() const { return order_id_index_; }
-    const PriceIndex& TEST_price_index() const { return price_index_; }
-
 private:
     // Incoming price, resting price -> successful match.
     using MatchingFunction = std::function<bool(Price, Price)>;
@@ -73,6 +66,10 @@ private:
     // given price only one type of the order can be in the book (otherwise
     //they will result in a trade).
     PriceIndex price_index_;
+
+#ifdef UNIT_TEST
+    friend class OrderBookTest;
+#endif // UNIT_TEST
 };
 
 }  // mukhi::matching_engine

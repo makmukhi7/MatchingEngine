@@ -27,7 +27,7 @@ protected:
 };
 
 TEST_F(MatchingEngineTest, Simple) {
-    std::thread t(&MatchingEngine::StartBlocking, me_.get());
+    std::thread t(&MatchingEngine::Start, me_.get());
     std::string input;
     input += "0,1000000,1,1,1075\n";
     input += "0,1000001,0,9,1000\n";
