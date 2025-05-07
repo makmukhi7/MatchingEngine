@@ -39,45 +39,45 @@ Side to_side_type(uint8_t t) {
     }
 }
 
-std::optional<AddOrderRequest> ParseAddOrderRequest(std::string_view input) {
+std::optional<AddOrderRequest> ParseAddOrderRequest(std::string_view input, std::ostream& es) {
     size_t pos = input.find(",");
     if (pos == std::string::npos) {
-        std::cerr << "Bad Message: Unparsable add order request" << std::endl;
+        es << "Bad Message: Unparsable add order request" << std::endl;
     }
     AddOrderRequest req;
     auto result = std::from_chars(input.data(), input.data() + pos, req.order_id);
     if (result.ec != std::errc() || result.ptr != input.data() + pos) {
-        std::cerr << "Bad Message: Unparsable order id in add order request" << std::endl;
+        es << "Bad Message: Unparsable order id in add order request" << std::endl;
         return std::nullopt;
     }
     input = input.substr(pos + 1);
     pos = input.find(",");
     if (pos == std::string::npos) {
-        std::cerr << "Bad Message: Unparsable add order request" << std::endl;
+        es << "Bad Message: Unparsable add order request" << std::endl;
         return std::nullopt;
     }
     uint8_t side;
     result = std::from_chars(input.data(), input.data() + pos, side);
     if (result.ec != std::errc() || result.ptr != input.data() + pos) {
-        std::cerr << "Bad Message: Unparsable 'side' in add order request" << std::endl;
+        es << "Bad Message: Unparsable 'side' in add order request" << std::endl;
         return std::nullopt;
     }
     if (auto s = to_side_type(side); s != Side::kUndefined) {
         req.side = s;
     }
     else {
-        std::cerr << "Bad Message: Unknown value for 'side' in add order request" << std::endl;
+        es << "Bad Message: Unknown value for 'side' in add order request" << std::endl;
         return std::nullopt;
     }
     input = input.substr(pos + 1);
     pos = input.find(",");
     if (pos == std::string::npos) {
-        std::cerr << "Bad Message: Unparsable add order request" << std::endl;
+        es << "Bad Message: Unparsable add order request" << std::endl;
         return std::nullopt;
     }
     result = std::from_chars(input.data(), input.data() + pos, req.qty);
     if (result.ec != std::errc() || result.ptr != input.data() + pos) {
-        std::cerr << "Bad Message: Unparsable 'quantity' in add order request" << std::endl;
+        es << "Bad Message: Unparsable 'quantity' in add order request" << std::endl;
         return std::nullopt;
     }
     input = input.substr(pos + 1);
@@ -85,31 +85,31 @@ std::optional<AddOrderRequest> ParseAddOrderRequest(std::string_view input) {
     // Note that `std::from_chars` isn't available for floating points in libc++ standard library used by clang on mac os (dev environment). Therefore, we will rely on `std::stod` for parsing `price`. As such we must check for leading whitespaces, and trailing whitespaces as well as non-numeric characters.
     try {
         if (std::isspace(input.at(0))) {
-            std::cerr << "Bad Message: Unparsable 'price' in add order request" << std::endl;
+            es << "Bad Message: Unparsable 'price' in add order request" << std::endl;
             return std::nullopt;
         }
         req.price = std::stod(input.data(), &pos);
     }
     catch (const std::invalid_argument& e) {
-        std::cerr << "Bad Message: Unparsable 'price' in add order request " << e.what() << std::endl;
+        es << "Bad Message: Unparsable 'price' in add order request " << e.what() << std::endl;
         return std::nullopt;
     }
     catch (const std::out_of_range& e) {
-        std::cerr << "Bad Message: Unparsable 'price' in add order request " << e.what() << std::endl;
+        es << "Bad Message: Unparsable 'price' in add order request " << e.what() << std::endl;
         return std::nullopt;
     }
     if (input.size() != pos) {
-        std::cerr << "Bad Message: Unparsable add order request " << std::endl;
+        es << "Bad Message: Unparsable add order request " << std::endl;
         return std::nullopt;
     }
     return req;
 }
 
-std::optional<CancelOrderRequest> ParseCancelOrderRequest(std::string_view input) {
+std::optional<CancelOrderRequest> ParseCancelOrderRequest(std::string_view input, std::ostream& es) {
     OrderId order_id;
     auto [ptr, ec] = std::from_chars(input.data(), input.data() + input.size(), order_id);
     if (ec != std::errc() || ptr != input.data() + input.size()) {
-        std::cerr << "Bad message: Unparsable order id in cancel order request" << std::endl;
+        es << "Bad message: Unparsable order id in cancel order request" << std::endl;
         return std::nullopt;
     }
     return CancelOrderRequest{ .order_id = order_id };
@@ -117,25 +117,25 @@ std::optional<CancelOrderRequest> ParseCancelOrderRequest(std::string_view input
 
 }  // namespace
 
-std::optional<InputMessage> parse(std::string_view input) {
+std::optional<InputMessage> parse(std::string_view input, std::ostream& es) {
     size_t pos = input.find(",");
     if (pos == std::string::npos) {
-        std::cerr << "Bad message: Unknown format." << std::endl;
+        es << "Bad message: Unknown format." << std::endl;
         return std::nullopt;
     }
     uint8_t type{};
     auto [ptr, ec] = std::from_chars(input.data(), input.data() + pos, type);
     if (ec != std::errc() || ptr != input.data() + pos) {
-        std::cerr << "Bad message: Unknown type." << std::endl;
+        es << "Bad message: Unknown type." << std::endl;
         return std::nullopt;
     }
     switch (to_msg_type(type)) {
     case MessageType::kAddOrderRequest:
-        return ParseAddOrderRequest(input.substr(pos + 1));
+        return ParseAddOrderRequest(input.substr(pos + 1), es);
     case MessageType::kCancelOrderRequest:
-        return ParseCancelOrderRequest(input.substr(pos + 1));
+        return ParseCancelOrderRequest(input.substr(pos + 1), es);
     default:
-        std::cerr << "Bad message: Invalid error type" << std::endl;
+        es << "Bad message: Invalid error type" << std::endl;
         return std::nullopt;
     }
 }

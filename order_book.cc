@@ -94,14 +94,14 @@ void OrderBook::AddOrder(Order o) {
         // An order list for this price already exists.
         IteratorVariant order_map_itr = price_index_itr->second;
         OrderList::iterator order_list_itr;
+        OrderList* list;
         if (o.side == Side::kSell) {
-            OrderList& list = order_map_itr.sell_order_map_it->second;
-            order_list_itr = list.insert(list.end(), std::move(o));
+            list = &order_map_itr.sell_order_map_it->second;
         }
         else {
-            OrderList& list = order_map_itr.buy_order_map_it->second;
-            order_list_itr = list.insert(list.end(), std::move(o));
+            list = &order_map_itr.buy_order_map_it->second;
         }
+        order_list_itr = list->insert(list->end(), std::move(o));
         order_id_index_.emplace(std::make_pair(o.id, OrderEntry{ order_map_itr, order_list_itr }));
     }
     else {
@@ -127,7 +127,7 @@ void OrderBook::ProcessOrder(const AddOrderRequest& req) {
     // Check that order id isn't being repeated
     auto order_id_index_itr = order_id_index_.find(req.order_id);
     if (order_id_index_itr != order_id_index_.end()) {
-        std::cerr << "Unable to process: Order id is being repeated: " << req.order_id << std::endl;
+        es_ << "Unable to process: Order id is being repeated: " << req.order_id << std::endl;
         return;
     }
 
@@ -146,7 +146,7 @@ void OrderBook::ProcessOrder(const AddOrderRequest& req) {
 void OrderBook::ProcessOrder(const CancelOrderRequest& req) {
     auto order_id_index_itr = order_id_index_.find(req.order_id);
     if (order_id_index_itr == order_id_index_.end()) {
-        std::cerr << "No such order with id: " << req.order_id << std::endl;
+        es_ << "No such order with id: " << req.order_id << std::endl;
         return;
     }
     IteratorVariant order_map_itr = order_id_index_itr->second.first;

@@ -50,7 +50,9 @@ using InputMessage = std::variant<AddOrderRequest, CancelOrderRequest>;
 // * msgtype,orderid (e.g., 1,123)
 //
 // Note that no whitespace is allowed between token and delimter(comma).
-std::optional<InputMessage> parse(std::string_view input);
+// 
+// Error messages are printed on `es`.
+std::optional<InputMessage> parse(std::string_view input, std::ostream& es);
 
 // Output messages.
 

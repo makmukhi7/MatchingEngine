@@ -8,7 +8,8 @@
 namespace mukhi::matching_engine {
 TEST(OrderBook, SingleInsert) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest req{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
     b.ProcessOrder(req);
 
@@ -23,7 +24,8 @@ TEST(OrderBook, SingleInsert) {
 
 TEST(OrderBook, RepeatedOrderId) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest req{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
     b.ProcessOrder(req);
 
@@ -51,7 +53,8 @@ TEST(OrderBook, RepeatedOrderId) {
 
 TEST(OrderBook, SingleCancel) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     CancelOrderRequest req{ .order_id = 999 };
     b.ProcessOrder(req);
 
@@ -64,9 +67,10 @@ TEST(OrderBook, SingleCancel) {
     EXPECT_EQ(b.TEST_order_id_index().size(), 0);
 }
 
-TEST(OrderBook, SingleInsertAndCancel) {
+TEST(OrderBook, SingleInsertAndCancelSell) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest add{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
     b.ProcessOrder(add);
 
@@ -89,9 +93,36 @@ TEST(OrderBook, SingleInsertAndCancel) {
     EXPECT_EQ(b.TEST_order_id_index().size(), 0);
 }
 
+TEST(OrderBook, SingleInsertAndCancelBuy) {
+    std::ostringstream oss;
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
+    AddOrderRequest add{ .order_id = 1111, .side = Side::kBuy, .qty = 15, .price = 11.0 };
+    b.ProcessOrder(add);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+
+    CancelOrderRequest can{ .order_id = 1111 };
+    b.ProcessOrder(can);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_price_index().size(), 0);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 0);
+}
+
 TEST(OrderBook, MultipleSellInserts) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest req1{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
     b.ProcessOrder(req1);
 
@@ -129,7 +160,8 @@ TEST(OrderBook, MultipleSellInserts) {
 
 TEST(OrderBook, MultipleBuyInserts) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest req1{ .order_id = 1111, .side = Side::kBuy, .qty = 15, .price = 11.0 };
     b.ProcessOrder(req1);
 
@@ -167,9 +199,10 @@ TEST(OrderBook, MultipleBuyInserts) {
 
 TEST(OrderBook, MultipleInsertsAndCancel) {
     std::ostringstream oss;
-    OrderBook b(oss);
-    AddOrderRequest req1{ .order_id = 1111, .side = Side::kBuy, .qty = 15, .price = 11.0 };
-    b.ProcessOrder(req1);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
+    AddOrderRequest add1{ .order_id = 1111, .side = Side::kBuy, .qty = 15, .price = 11.0 };
+    b.ProcessOrder(add1);
 
     // Nothing is printed when no trade occurs.
     EXPECT_EQ(oss.str(), "");
@@ -179,8 +212,8 @@ TEST(OrderBook, MultipleInsertsAndCancel) {
     EXPECT_EQ(b.TEST_price_index().size(), 1);
     EXPECT_EQ(b.TEST_order_id_index().size(), 1);
 
-    AddOrderRequest req2{ .order_id = 1112, .side = Side::kBuy, .qty = 5, .price = 11.0 };
-    b.ProcessOrder(req2);
+    AddOrderRequest add2{ .order_id = 1112, .side = Side::kBuy, .qty = 5, .price = 11.0 };
+    b.ProcessOrder(add2);
 
     // Nothing is printed when no trade occurs.
     EXPECT_EQ(oss.str(), "");
@@ -191,8 +224,8 @@ TEST(OrderBook, MultipleInsertsAndCancel) {
     EXPECT_EQ(b.TEST_price_index().size(), 1);
     EXPECT_EQ(b.TEST_order_id_index().size(), 2);
 
-    CancelOrderRequest can{ .order_id = 1111 };
-    b.ProcessOrder(can);
+    CancelOrderRequest can1{ .order_id = 1111 };
+    b.ProcessOrder(can1);
 
     // Nothing is printed when no trade occurs.
     EXPECT_EQ(oss.str(), "");
@@ -201,11 +234,23 @@ TEST(OrderBook, MultipleInsertsAndCancel) {
     EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
     EXPECT_EQ(b.TEST_price_index().size(), 1);
     EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+
+    CancelOrderRequest can2{ .order_id = 1112 };
+    b.ProcessOrder(can2);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_price_index().size(), 0);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 0);
 }
 
 TEST(OrderBook, NoTradeOccurs) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest sell{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
     b.ProcessOrder(sell);
 
@@ -229,9 +274,10 @@ TEST(OrderBook, NoTradeOccurs) {
     EXPECT_EQ(b.TEST_order_id_index().size(), 2);
 }
 
-TEST(OrderBook, TradeOccursBothFullfilled) {
+TEST(OrderBook, TradeOccursBothFullfilledIncomingBuy) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest sell{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
     b.ProcessOrder(sell);
 
@@ -262,9 +308,44 @@ TEST(OrderBook, TradeOccursBothFullfilled) {
     EXPECT_EQ(b.TEST_order_id_index().size(), 0);
 }
 
-TEST(OrderBook, TradeOccursRestingFullfilled) {
+TEST(OrderBook, TradeOccursBothFullfilledIncomingSell) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
+    AddOrderRequest buy{ .order_id = 1111, .side = Side::kBuy, .qty = 15, .price = 11.0 };
+    b.ProcessOrder(buy);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+
+    AddOrderRequest sell{ .order_id = 1112, .side = Side::kSell, .qty = 15, .price = 10.0 };
+    b.ProcessOrder(sell);
+
+    // Trade event price is from the resting order.
+    TradeEvent te{ .qty = 15, .price = 11.0 };
+    OrderFullyFilled incoming{ .order_id = 1112 };
+    OrderFullyFilled resting{ .order_id = 1111 };
+
+    std::ostringstream expected;
+    expected << te << std::endl << incoming << std::endl << resting << std::endl;
+
+    EXPECT_EQ(oss.str(), expected.str());
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_price_index().size(), 0);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 0);
+}
+
+TEST(OrderBook, TradeOccursRestingSellFullfilled) {
+    std::ostringstream oss;
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest sell{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
     b.ProcessOrder(sell);
 
@@ -296,9 +377,46 @@ TEST(OrderBook, TradeOccursRestingFullfilled) {
     EXPECT_EQ(b.TEST_order_id_index().size(), 1);
 }
 
-TEST(OrderBook, TradeOccursIncomingFullfilled) {
+TEST(OrderBook, TradeOccursRestingBuyFullfilled) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
+    AddOrderRequest buy{ .order_id = 1111, .side = Side::kBuy, .qty = 15, .price = 11.0 };
+    b.ProcessOrder(buy);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+
+    AddOrderRequest sell{ .order_id = 1112, .side = Side::kSell, .qty = 20, .price = 9.0 };
+    b.ProcessOrder(sell);
+
+    // Trade event price is from the resting order.
+    // Trade event quantity is from resting order.
+    TradeEvent te{ .qty = 15, .price = 11.0 };
+    OrderPartiallyFilled incoming{ .order_id = 1112, .remaining = 5 };
+    OrderFullyFilled resting{ .order_id = 1111 };
+
+    std::ostringstream expected;
+    expected << te << std::endl << incoming << std::endl << resting << std::endl;
+
+    EXPECT_EQ(oss.str(), expected.str());
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+}
+
+
+TEST(OrderBook, TradeOccursIncomingBuyFullfilled) {
+    std::ostringstream oss;
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest sell{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
     b.ProcessOrder(sell);
 
@@ -330,9 +448,45 @@ TEST(OrderBook, TradeOccursIncomingFullfilled) {
     EXPECT_EQ(b.TEST_order_id_index().size(), 1);
 }
 
-TEST(OrderBook, IncomingOrderMatchMultipleRestingOrdersFullfills) {
+TEST(OrderBook, TradeOccursIncomingSellFullfilled) {
     std::ostringstream oss;
-    OrderBook b(oss);
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
+    AddOrderRequest buy{ .order_id = 1111, .side = Side::kBuy, .qty = 15, .price = 11.0 };
+    b.ProcessOrder(buy);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+
+    AddOrderRequest sell{ .order_id = 1112, .side = Side::kSell, .qty = 5, .price = 11.0 };
+    b.ProcessOrder(sell);
+
+    // Trade event price is from the resting order.
+    // Trade event quantity is from incoming order.
+    TradeEvent te{ .qty = 5, .price = 11.0 };
+    OrderFullyFilled incoming{ .order_id = 1112 };
+    OrderPartiallyFilled resting{ .order_id = 1111, .remaining = 10 };
+
+    std::ostringstream expected;
+    expected << te << std::endl << incoming << std::endl << resting << std::endl;
+
+    EXPECT_EQ(oss.str(), expected.str());
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+}
+
+TEST(OrderBook, IncomingBuyOrderMatchMultipleRestingOrdersFullfills) {
+    std::ostringstream oss;
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
     AddOrderRequest sell1{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
     b.ProcessOrder(sell1);
 
@@ -380,4 +534,147 @@ TEST(OrderBook, IncomingOrderMatchMultipleRestingOrdersFullfills) {
     EXPECT_EQ(b.TEST_order_id_index().size(), 0);
 }
 
+TEST(OrderBook, IncomingSellOrderMatchMultipleRestingOrdersFullfills) {
+    std::ostringstream oss;
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
+    AddOrderRequest buy1{ .order_id = 1111, .side = Side::kBuy, .qty = 15, .price = 11.0 };
+    b.ProcessOrder(buy1);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+
+    AddOrderRequest buy2{ .order_id = 1113, .side = Side::kBuy, .qty = 5, .price = 12.0 };
+    b.ProcessOrder(buy2);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 2);
+    EXPECT_EQ(b.TEST_price_index().size(), 2);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 2);
+
+    AddOrderRequest sell{ .order_id = 1112, .side = Side::kSell, .qty = 20, .price = 10.0 };
+    b.ProcessOrder(sell);
+
+    std::ostringstream expected;
+    // 2 Trade events
+    TradeEvent te1{ .qty = 5, .price = 12.0 };
+    OrderPartiallyFilled incoming_partial{ .order_id = 1112, .remaining = 15 };
+    OrderFullyFilled resting_full1{ .order_id = 1113 };
+
+    expected << te1 << std::endl << incoming_partial << std::endl << resting_full1 << std::endl;
+
+    TradeEvent te2{ .qty = 15, .price = 11.0 };
+    OrderFullyFilled incoming_full{ .order_id = 1112 };
+    OrderFullyFilled resting_full2{ .order_id = 1111 };
+
+    expected << te2 << std::endl << incoming_full << std::endl << resting_full2 << std::endl;
+
+    EXPECT_EQ(oss.str(), expected.str());
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_price_index().size(), 0);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 0);
 }
+
+TEST(OrderBook, MultipleRestingSellOrdersSamePriceOneExecutes) {
+    std::ostringstream oss;
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
+    AddOrderRequest sell1{ .order_id = 1111, .side = Side::kSell, .qty = 15, .price = 11.0 };
+    b.ProcessOrder(sell1);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+
+    AddOrderRequest sell2{ .order_id = 1113, .side = Side::kSell, .qty = 5, .price = 11.0 };
+    b.ProcessOrder(sell2);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_sell_order_map().begin()->second.size(), 2);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 2);
+
+    AddOrderRequest buy{ .order_id = 1112, .side = Side::kBuy, .qty = 15, .price = 12.0 };
+    b.ProcessOrder(buy);
+
+    std::ostringstream expected;
+    // 1 Trade event
+    TradeEvent te{ .qty = 15, .price = 11.0 };
+    OrderFullyFilled incoming{ .order_id = 1112 };
+    OrderFullyFilled resting{ .order_id = 1111 };
+
+    expected << te << std::endl << incoming << std::endl << resting << std::endl;
+
+    EXPECT_EQ(oss.str(), expected.str());
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+}
+
+TEST(OrderBook, MultipleRestingBuyOrdersSamePriceOneExecutes) {
+    std::ostringstream oss;
+    std::ostringstream ess;
+    OrderBook b(oss, ess);
+    AddOrderRequest buy1{ .order_id = 1111, .side = Side::kBuy, .qty = 15, .price = 11.0 };
+    b.ProcessOrder(buy1);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+
+    AddOrderRequest buy2{ .order_id = 1113, .side = Side::kBuy, .qty = 5, .price = 11.0 };
+    b.ProcessOrder(buy2);
+
+    // Nothing is printed when no trade occurs.
+    EXPECT_EQ(oss.str(), "");
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_buy_order_map().begin()->second.size(), 2);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 2);
+
+    AddOrderRequest sell{ .order_id = 1112, .side = Side::kSell, .qty = 15, .price = 9.0 };
+    b.ProcessOrder(sell);
+
+    std::ostringstream expected;
+    // 1 Trade event
+    TradeEvent te{ .qty = 15, .price = 11.0 };
+    OrderFullyFilled incoming{ .order_id = 1112 };
+    OrderFullyFilled resting{ .order_id = 1111 };
+
+    expected << te << std::endl << incoming << std::endl << resting << std::endl;
+
+    EXPECT_EQ(oss.str(), expected.str());
+
+    EXPECT_EQ(b.TEST_sell_order_map().size(), 0);
+    EXPECT_EQ(b.TEST_buy_order_map().size(), 1);
+    EXPECT_EQ(b.TEST_price_index().size(), 1);
+    EXPECT_EQ(b.TEST_order_id_index().size(), 1);
+}
+
+}  // namespace mmukhi::matching_engine

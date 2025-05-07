@@ -33,6 +33,38 @@ cc_test(
     ],
 )
 
+cc_library(
+    name = "matching_engine",
+    hdrs = ["matching_engine.h"],
+    srcs = ["matching_engine.cc"],
+    deps = [
+        ":messages",
+        ":order_book",
+    ],
+)
+
+cc_library(
+    name = "matching_engine_testable",
+    hdrs = ["matching_engine.h"],
+    srcs = ["matching_engine.cc"],
+    copts = ["-DUNIT_TEST"],
+    deps = [
+        ":messages",
+        ":order_book",
+    ],
+)
+
+cc_test(
+    name = "matching_engine_test",
+    size = "small",
+    srcs = ["matching_engine_test.cc"],
+    deps = [
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "//:matching_engine_testable",
+    ],
+)
+
 cc_binary(
     name = "main",
     srcs = ["main.cc"],

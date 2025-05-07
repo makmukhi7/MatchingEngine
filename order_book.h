@@ -34,7 +34,7 @@ using PriceIndex = std::unordered_map<Price, IteratorVariant>;
 
 class OrderBook {
 public:
-    OrderBook(std::ostream& os) : os_(os) {}
+    OrderBook(std::ostream& os, std::ostream& es) : os_(os), es_(es) {}
 
     void ProcessOrder(const AddOrderRequest& req);
     void ProcessOrder(const CancelOrderRequest& req);
@@ -57,6 +57,7 @@ private:
     void ExecuteTrades(Order& incoming_order, OrderList& order_list);
 
     std::ostream& os_;
+    std::ostream& es_;
 
     // Tracks all sell orders and keeps them sorted by price.
     SellOrderMap sell_orders_;
