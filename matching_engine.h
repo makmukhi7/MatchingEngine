@@ -5,10 +5,6 @@
 
 #include "order_book.h"
 
-#ifdef UNIT_TEST
-#include <atomic>
-#endif  // UNIT_TEST
-
 namespace mukhi::matching_engine {
 
 // todo: add documentation and mention thread safety here an in all other classes.
@@ -28,11 +24,6 @@ private:
     std::ostream& es_;
 
     OrderBook ob_;
-
-#ifdef UNIT_TEST
-    std::atomic_bool stop_ = false;
-    friend class MatchingEngineTest;
-#endif  // UNIT_TEST
 };
 
 }  // namespace mukhi::matching_engine

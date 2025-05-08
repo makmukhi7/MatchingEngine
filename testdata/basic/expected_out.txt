@@ -1,0 +1,6 @@
+2,2,1025 // Trade for 2 at 1025
+4,1000008,1 // order partially filled, remaining open quantity 1
+3,1000005 // order fully filled
+2,1,1025 // Trade for 1 at 1025
+3,1000008 // order fully filled
+4,1000007,4 // order quantity reduced for partial fill

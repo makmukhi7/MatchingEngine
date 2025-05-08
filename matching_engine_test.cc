@@ -1,7 +1,8 @@
-#define UNIT_TEST
 #include "matching_engine.h"
 
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
@@ -10,54 +11,72 @@
 
 namespace mukhi::matching_engine {
 
-class MatchingEngineTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        me_ = std::make_unique<MatchingEngine>(is_, os_, es_);
+namespace fs = std::filesystem;
+
+TEST(MatchingEngineTest, EndToEnd) {
+    for (const auto& entry : fs::directory_iterator("testdata")) {
+        std::cout << "Running scenario under: " << entry.path() << std::endl;
+        fs::path input_file_path = entry.path() / fs::path("input.txt");
+        fs::path expected_output_file_path = entry.path() / fs::path("expected_out.txt");
+        fs::path expected_error_file_path = entry.path() / fs::path("expected_err.txt");
+        std::ifstream input_file(input_file_path);
+        if (!input_file.is_open()) {
+            std::cerr << "Couldn't open input file." << std::endl;
+            continue;
+        }
+        std::ifstream expected_output_file(expected_output_file_path);
+        if (!expected_output_file.is_open()) {
+            std::cerr << "Couldn't open expected output file." << std::endl;
+            continue;
+        }
+        std::ifstream expected_error_file(expected_error_file_path);
+        if (!expected_error_file.is_open()) {
+            std::cerr << "Couldn't open expected error file." << std::endl;
+            continue;
+        }
+
+        // Read input from test scenario.
+        std::string line;
+        std::string input;
+        while (std::getline(input_file, line)) {
+            // Ignore everything after space
+            if (size_t pos = line.find(" "); pos != std::string::npos) {
+                line = line.substr(0, pos);
+            }
+            input += line + "\n";
+        }
+
+        // Start Matching Engine
+        std::istringstream is(input);
+        std::ostringstream os;
+        std::ostringstream es;
+        MatchingEngine me(is, os, es);
+        std::thread t(&MatchingEngine::Start, &me);
+
+        // Prepare expectations.
+        std::string expected_output;
+        while (std::getline(expected_output_file, line)) {
+            // Ignore everything after space
+            if (size_t pos = line.find(" "); pos != std::string::npos) {
+                line = line.substr(0, pos);
+            }
+            expected_output += line + "\n";
+        }
+        std::string expected_error;
+        while (std::getline(expected_error_file, line)) {
+            expected_error += line + "\n";
+        }
+
+        // Give matching engine plenty of time before stopping.
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        // Stop matching engine by setting EOF on input stream.
+        is.setstate(std::ios_base::eofbit);
+        t.join();
+
+        // Make assertions.
+        EXPECT_THAT(os.str(), expected_output);
+        EXPECT_THAT(es.str(), expected_error);
     }
-
-    void Stop() {
-        me_->stop_.store(true);
-    }
-
-    std::istringstream is_;
-    std::ostringstream os_;
-    std::ostringstream es_;
-    std::unique_ptr<MatchingEngine> me_;
-};
-
-TEST_F(MatchingEngineTest, Simple) {
-    std::thread t(&MatchingEngine::Start, me_.get());
-    std::string input;
-    input += "0,1000000,1,1,1075\n";
-    input += "0,1000001,0,9,1000\n";
-    input += "0,1000002,0,30,975\n";
-    input += "0,1000003,1,10,1050\n";
-    input += "0,1000004,0,10,950\n";
-    input += "BADMESSAGE\n";
-    input += "0,1000005,1,2,1025\n";
-    input += "0,1000006,0,1,1000\n";
-    input += "1,1000004\n";
-    input += "0,1000007,1,5,1025\n";
-    input += "0,1000008,0,3,1050\n";
-
-    is_.str(input);
-
-    std::ostringstream expected;
-    expected << "2,2,1025" << std::endl;
-    expected << "4,1000008,1" << std::endl;
-    expected << "3,1000005" << std::endl;
-    expected << "2,1,1025" << std::endl;
-    expected << "3,1000008" << std::endl;
-    expected << "4,1000007,4" << std::endl;
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    Stop();
-    t.join();
-
-    EXPECT_THAT(os_.str(), expected.str());
-    EXPECT_THAT(es_.str(), ::testing::HasSubstr("Bad message"));
-
 }
 
 }  // namespace mukhi::matching_engine

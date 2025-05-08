@@ -43,30 +43,21 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "matching_engine_testable",
-    hdrs = ["matching_engine.h"],
-    srcs = ["matching_engine.cc"],
-    copts = ["-DUNIT_TEST"],
-    deps = [
-        ":messages",
-        ":order_book",
-    ],
-)
-
 cc_test(
     name = "matching_engine_test",
     size = "small",
     srcs = ["matching_engine_test.cc"],
+    data = glob(["testdata/**"]),
     deps = [
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "//:matching_engine_testable",
+        "//:matching_engine",
+
     ],
 )
 
 cc_binary(
     name = "main",
     srcs = ["main.cc"],
-    deps = ["//:messages"],
+    deps = ["//:matching_engine"],
 )

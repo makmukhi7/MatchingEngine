@@ -1,9 +1,11 @@
 #include <iostream>
 
-#include "messages.h"
+#include "matching_engine.h"
 
 int main(int argc, char** argv) {
-    mukhi::matching_engine::TradeEvent te{ .qty = 10, .price = 75 };
-    std::cout << te << std::endl;
+    mukhi::matching_engine::MatchingEngine me(std::cin, std::cout, std::cerr);
+    std::cout << "Starting matching engine..." << std::endl;
+    me.Start();
+
     return 0;
 }
