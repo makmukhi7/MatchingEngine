@@ -50,7 +50,7 @@ already exists in the book then O(1), otherwise O(log(n)).
 a b-tree with an iterator to the node being delted is amortized constant).
 
 * Matching: O(m), where m is the number of resting orders an incoming order
-matchies. So determining if there's at least one match is constant time
+matches. So determining if there's at least one match is constant time
 complexity.
 
 This class is not thread-safe.
