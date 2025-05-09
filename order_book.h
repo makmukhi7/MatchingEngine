@@ -43,11 +43,12 @@ object.
 
 Following are the time complexities of various operations on the order book:
 
-* Inserting a new order: If an order with same price and same type (buy/sell)
-already exists in the book then O(1), otherwise O(log(n)).
+* Inserting a new order (partially matched or unmatched): If an order with same
+price and same type (buy/sell) already exists in the book then O(1), otherwise
+O(log(n)).
 
 * Deletion (canceled or fulfilled): O(1) (Note: that complexity of deleting from
-a b-tree with an iterator to the node being delted is amortized constant).
+a b-tree with an iterator to the node being deleted is amortized constant).
 
 * Matching: O(m), where m is the number of resting orders an incoming order
 matches. So determining if there's at least one match is constant time
