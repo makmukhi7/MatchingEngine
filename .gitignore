@@ -4,3 +4,4 @@ baze-out
 bazel-testlogs
 MODULE.bazel.lock
 a.out
+test_pipe

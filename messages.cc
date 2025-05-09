@@ -8,6 +8,8 @@
 namespace mukhi::matching_engine {
 
 namespace {
+constexpr uint32_t kErrLimit = 50;
+
 uint32_t to_num(const MessageType& t) { return static_cast<uint32_t>(t); }
 MessageType to_msg_type(uint32_t t) {
   switch (t) {
@@ -41,7 +43,8 @@ std::optional<AddOrderRequest> ParseAddOrderRequest(std::string_view input,
                                                     std::ostream& es) {
   size_t pos = input.find(",");
   if (pos == std::string::npos) {
-    es << "Bad Message: Unparsable add order request : " << input << std::endl;
+    es << "Bad Message: Unparsable add order request : "
+       << input.substr(0, kErrLimit) << std::endl;
   }
   AddOrderRequest req;
   auto result = std::from_chars(input.data(), input.data() + pos, req.order_id);
@@ -53,7 +56,8 @@ std::optional<AddOrderRequest> ParseAddOrderRequest(std::string_view input,
   input = input.substr(pos + 1);
   pos = input.find(",");
   if (pos == std::string::npos) {
-    es << "Bad Message: Unparsable add order request : " << input << std::endl;
+    es << "Bad Message: Unparsable add order request : "
+       << input.substr(0, kErrLimit) << std::endl;
     return std::nullopt;
   }
   uint8_t side;
@@ -67,13 +71,14 @@ std::optional<AddOrderRequest> ParseAddOrderRequest(std::string_view input,
     req.side = s;
   } else {
     es << "Bad Message: Unknown value for 'side' in add order request : "
-       << input << std::endl;
+       << input.substr(0, kErrLimit) << std::endl;
     return std::nullopt;
   }
   input = input.substr(pos + 1);
   pos = input.find(",");
   if (pos == std::string::npos) {
-    es << "Bad Message: Unparsable add order request : " << input << std::endl;
+    es << "Bad Message: Unparsable add order request : "
+       << input.substr(0, kErrLimit) << std::endl;
     return std::nullopt;
   }
   result = std::from_chars(input.data(), input.data() + pos, req.qty);
@@ -97,16 +102,17 @@ std::optional<AddOrderRequest> ParseAddOrderRequest(std::string_view input,
     }
     req.price = std::stod(input.data(), &pos);
   } catch (const std::invalid_argument& e) {
-    es << "Bad Message: Unparsable 'price' in add order request " << e.what()
+    es << "Bad Message: exception while parsing 'price': " << e.what()
        << std::endl;
     return std::nullopt;
   } catch (const std::out_of_range& e) {
-    es << "Bad Message: Unparsable 'price' in add order request " << e.what()
+    es << "Bad Message: exception while parsing 'price': " << e.what()
        << std::endl;
     return std::nullopt;
   }
   if (input.size() != pos) {
-    es << "Bad Message: Unparsable add order request : " << input << std::endl;
+    es << "Bad Message: Unparsable add order request : "
+       << input.substr(0, kErrLimit) << std::endl;
     return std::nullopt;
   }
   return req;
@@ -130,13 +136,15 @@ std::optional<CancelOrderRequest> ParseCancelOrderRequest(
 std::optional<InputMessage> parse(std::string_view input, std::ostream& es) {
   size_t pos = input.find(",");
   if (pos == std::string::npos) {
-    es << "Bad message: Unknown format : " << input << std::endl;
+    es << "Bad message: Unknown format : " << input.substr(0, kErrLimit)
+       << std::endl;
     return std::nullopt;
   }
   uint8_t type{};
   auto [ptr, ec] = std::from_chars(input.data(), input.data() + pos, type);
   if (ec != std::errc() || ptr != input.data() + pos) {
-    es << "Bad message: Unknown type : " << input << std::endl;
+    es << "Bad message: Unknown type : " << input.substr(0, kErrLimit)
+       << std::endl;
     return std::nullopt;
   }
   switch (to_msg_type(type)) {
@@ -145,7 +153,8 @@ std::optional<InputMessage> parse(std::string_view input, std::ostream& es) {
     case MessageType::kCancelOrderRequest:
       return ParseCancelOrderRequest(input.substr(pos + 1), es);
     default:
-      es << "Bad message: Invalid type : " << input << std::endl;
+      es << "Bad message: Invalid type : " << input.substr(0, kErrLimit)
+         << std::endl;
       return std::nullopt;
   }
 }
