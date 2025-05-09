@@ -34,6 +34,27 @@ struct IteratorVariant {
 using OrderEntry = std::pair<IteratorVariant, OrderList::iterator>;
 using PriceIndex = std::unordered_map<Price, IteratorVariant>;
 
+/*
+Keeps track of orders that haven't yet been fully filled.
+
+An object of this class keeps references to the streams provided during
+construction and expects these streams to stay alive during the lifetime of the
+object.
+
+Following are the time complexities of various operations on the order book:
+
+* Inserting a new order: If an order with same price and same type (buy/sell)
+already exists in the book then O(1), otherwise O(log(n)).
+
+* Deletion (canceled or fulfilled): O(1) (Note: that complexity of deleting from
+a b-tree with an iterator to the node being delted is amortized constant).
+
+* Matching: O(m), where m is the number of resting orders an incoming order
+matchies. So determining if there's at least one match is constant time
+complexity.
+
+This class is not thread-safe.
+*/
 class OrderBook {
  public:
   OrderBook(std::ostream& os, std::ostream& es) : os_(os), es_(es) {}

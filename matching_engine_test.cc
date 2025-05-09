@@ -82,4 +82,57 @@ TEST(MatchingEngineTest, EndToEnd) {
   }
 }
 
+TEST(MatchingEngineTest, ThreadSafety) {
+  // Try to start matching engine in multiple threads.
+  std::istringstream is;
+  std::ostringstream os;
+  std::ostringstream es;
+  MatchingEngine me(is, os, es);
+  std::thread t1(&MatchingEngine::Start, &me);
+  std::thread t2(&MatchingEngine::Start, &me);
+  std::thread t3(&MatchingEngine::Start, &me);
+
+  // Give threads plenty of time to start
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  // Stop matching engine by setting EOF on input stream.
+  is.setstate(std::ios_base::eofbit);
+
+  t1.join();
+  t2.join();
+  t3.join();
+
+  // Only thread should succeed.
+  std::string expected_err =
+      "Matching Engine was already started\nMatching Engine was already "
+      "started\n";
+
+  EXPECT_EQ(es.str(), expected_err);
+}
+
+TEST(MatchingEngineTest, NoRestart) {
+  // Try to start matching engine in multiple threads.
+  std::istringstream is;
+  std::ostringstream os;
+  std::ostringstream es;
+  MatchingEngine me(is, os, es);
+  std::thread t(&MatchingEngine::Start, &me);
+
+  // Give threads plenty of time to start
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  // Stop matching engine by setting EOF on input stream.
+  is.setstate(std::ios_base::eofbit);
+
+  t.join();
+
+  // Shouldn't restart.
+  me.Start();
+
+  // Only thread should succeed.
+  std::string expected_err = "Matching Engine was already started\n";
+
+  EXPECT_EQ(es.str(), expected_err);
+}
+
 }  // namespace mukhi::matching_engine
