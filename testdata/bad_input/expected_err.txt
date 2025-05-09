@@ -1,6 +1,4 @@
 Bad message: Unknown format : wordsaren'tnumbers
 Bad Message: Unparsable add order request : 
-Bad Message: Unparsable order id in add order request : 
-Bad Message: exception while parsing 'price': string_view::at
 Bad Message: Unparsable add order request : 500,
 Bad message: Unknown format : 01234567891011121314151617181920212223242526272829

@@ -45,6 +45,7 @@ std::optional<AddOrderRequest> ParseAddOrderRequest(std::string_view input,
   if (pos == std::string::npos) {
     es << "Bad Message: Unparsable add order request : "
        << input.substr(0, kErrLimit) << std::endl;
+    return std::nullopt;
   }
   AddOrderRequest req;
   auto result = std::from_chars(input.data(), input.data() + pos, req.order_id);
